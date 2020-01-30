@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+*eslint*
+package-lock.json
+/rollup.config.js
+/src
+/docs/*
+!/docs/asar.js
