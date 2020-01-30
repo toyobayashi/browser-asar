@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>browser-asar</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+    body {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .input {
+      display: block;
+      height: 30px;
+      line-height: 30px;
+    }
+    .content {
+      display: flex;
+      height: calc(100% - 30px);
+      position: relative;
+    }
+    .left {
+      background: #eee;
+      width: 300px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+    }
+    .right {
+      display: block;
+      font-family: consolas;
+      font-size: 14px;
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #000;
+      overflow: auto;
+    }
+    .list-item {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <input class="input" type="file" id="fileInput" />
+  <div class="content">
+    <div class="left" id="left"></div>
+    <pre class="right" id="right"></pre>
+  </div>
+  <script src="./asar.js"></script>
+  <script src="./index.js"></script>
+</body>
+</html>
