@@ -1,6 +1,6 @@
 declare class Stat {
   constructor (info: any): Stat;
-  size: number;
+  readonly size: number;
   isUnpacked(): boolean;
   isDirectory(): boolean;
   isFile(): boolean;
@@ -9,6 +9,9 @@ declare class Stat {
 
 export declare class Filesystem {
   constructor (buffer: Uint8Array): Filesystem;
+  readonly buffer: Uint8Array;
+  readonly header: { files: { [item: string]: any } };
+  readonly headerSize: number;
   listFiles(options?: { isPack?: boolean }): string[];
   readFileSync(p: string): Uint8Array;
   readFileSync(p: string, toUtf8: true): string;

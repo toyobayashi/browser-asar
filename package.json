@@ -9,6 +9,7 @@
   },
   "keywords": ["asar"],
   "author": "toyobayashi",
+  "typings": "./typings/asar.d.ts",
   "license": "MIT",
   "devDependencies": {
     "eslint": "^6.8.0",

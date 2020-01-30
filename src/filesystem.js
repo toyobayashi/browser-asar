@@ -23,12 +23,23 @@ function Filesystem (buffer) {
   var headerPickle = createFromBuffer(headerBuf);
   var header = headerPickle.createIterator().readString();
 
-  /** @type {Uint8Array} */
-  this.buffer = buffer;
+  Object.defineProperties(this, {
+    buffer: {
+      configurable: false,
+      enumerable: true,
+      writable: false,
+      value: buffer
+    },
+    headerSize: {
+      configurable: false,
+      enumerable: true,
+      writable: false,
+      value: size
+    }
+  });
+
   /** @type {{ files: { [item: string]: any } }} */
   this.header = JSON.parse(header);
-  /** @type {number} */
-  this.headerSize = size;
 }
 
 function searchNodeFromDirectory (filesystem, p) {
