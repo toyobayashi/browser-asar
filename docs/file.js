@@ -1,4 +1,9 @@
 (function (window) {
+  var AudioContext = window.AudioContext || window.webkitAudioContext;
+  var ctx;
+  var source;
+  var activeListItem = null;
+
   var input = document.getElementById('fileInput');
   var left = document.getElementById('left');
   var right = document.getElementById('right');
@@ -7,6 +12,10 @@
 
   input.addEventListener('change', function (e) {
     var file = e.target.files[0];
+    if (!file) {
+      return;
+    }
+    stopBGM();
     var arr = file.name.split('.');
     if (arr[arr.length - 1] !== 'asar') {
       throw new Error('Not an asar file.');
@@ -20,9 +29,9 @@
         throw new Error('Invalid asar file: ' + err.message);
       }
 
-      while (left.hasChildNodes()) {
-        left.removeChild(left.childNodes[0]);
-      }
+      makeEmpty(left);
+      activeListItem = null;
+      makeEmpty(right);
       renderList('/', 0, fs);
     };
     reader.readAsArrayBuffer(file);
@@ -33,21 +42,35 @@
     if (target.className.indexOf('list-item') === -1) return;
     var stat = target._stat;
     var path = target._path;
+    var arr = path.split('.');
+    var ext;
+    if (arr.length === 1) {
+      ext = '';
+    } else {
+      ext = '.' + arr[arr.length - 1];
+    }
     if (!stat.isDirectory()) {
       var content;
       try {
-        content = fs.readFileSync(path, true);
-        right.innerHTML = content;
-        right.style.color = '#000';
+        if (ext === '.mp3') {
+          playBGM(path);
+        } else if (ext === '.png') {
+          setPicture(fs.readFileSync(path));
+        } else {
+          content = fs.readFileSync(path, true);
+          if (content.length > 1024 * 1024) {
+            throw new Error('Too large file.');
+          }
+          setText(content, '#000');
+        }
       } catch (err) {
-        right.innerHTML = err.message;
-        right.style.color = 'red';
+        setText(err.message, 'red');
       }
-      var items = left.getElementsByTagName('div');
-      for (var i = 0; i < items.length; i++) {
-        items[i].style.color = '#000';
+      if (activeListItem) {
+        activeListItem.style.color = '';
       }
       target.style.color = 'blue';
+      activeListItem = target;
     }
   });
 
@@ -64,7 +87,6 @@
       var stat = fs.statSync(item);
       div._stat = stat;
       div._path = item;
-      div._fs = fs;
       left.appendChild(div);
       if (stat.isDirectory()) {
         div.innerHTML = '[' + div.innerHTML + ']';
@@ -75,6 +97,57 @@
   }
 
   function join (a, b) {
+    if (a[a.length - 1] === '/') {
+      return a + b;
+    }
     return a + '/' + b;
+  }
+
+  function makeEmpty (dom) {
+    while (dom.hasChildNodes()) {
+      dom.removeChild(dom.childNodes[0]);
+    }
+  }
+
+  function setText (content, color) {
+    makeEmpty(right);
+    var pre = document.createElement('pre');
+    pre.innerHTML = content;
+    pre.style.color = color;
+    right.appendChild(pre);
+  }
+
+  function setPicture (content) {
+    makeEmpty(right);
+    var img = document.createElement('img');
+    img.src = 'data:image/png;base64,' + base64.fromByteArray(content);
+    right.appendChild(img);
+  }
+
+  function playBGM (path) {
+    makeEmpty(right);
+    if (!AudioContext) {
+      throw new Error('Your browser does not support AudioContext.');
+    }
+
+    ctx = ctx || new AudioContext();
+    stopBGM();
+    source = ctx.createBufferSource();
+    var data = fs.readFileSync(path);
+    ctx.decodeAudioData(data.buffer, function (buffer) {
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      // source.loop = true;
+      source.start(0);
+    }, function (err) {
+      setText(err.message, 'red');
+    });
+  }
+
+  function stopBGM () {
+    if (source) {
+      source.stop();
+      source.disconnect();
+    }
   }
 })(window);

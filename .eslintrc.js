@@ -10,6 +10,7 @@ module.exports = {
     ecmaVersion: 6
   },
   globals: {
+    base64: false,
     asar: false
   }
 }

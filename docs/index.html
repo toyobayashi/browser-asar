@@ -24,7 +24,7 @@
       padding: 0 10px;
     }
     .content {
-      display: flex;
+      display: none;
       height: calc(100% - 30px);
       position: relative;
     }
@@ -37,12 +37,16 @@
     }
     .right {
       display: block;
-      font-family: consolas;
-      font-size: 14px;
       flex: 1;
       padding: 10px;
       border: 1px solid #000;
       overflow: auto;
+      position: relative;
+    }
+    .right > pre {
+      display: block;
+      font-family: consolas;
+      font-size: 14px;
     }
     .list-item {
       cursor: pointer;
@@ -55,6 +59,7 @@
     <div class="left" id="left"></div>
     <pre class="right" id="right"></pre>
   </div>
+  <script src="./base64.js"></script>
   <script src="./asar.js"></script>
   <script src="./index.js"></script>
 </body>

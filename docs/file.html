@@ -36,12 +36,16 @@
     }
     .right {
       display: block;
-      font-family: consolas;
-      font-size: 14px;
       flex: 1;
       padding: 10px;
       border: 1px solid #000;
       overflow: auto;
+      position: relative;
+    }
+    .right > pre {
+      display: block;
+      font-family: consolas;
+      font-size: 14px;
     }
     .list-item {
       cursor: pointer;
@@ -52,8 +56,9 @@
   <input class="input" type="file" id="fileInput" />
   <div class="content">
     <div class="left" id="left"></div>
-    <pre class="right" id="right"></pre>
+    <div class="right" id="right"></div>
   </div>
+  <script src="./base64.js"></script>
   <script src="./asar.js"></script>
   <script src="./file.js"></script>
 </body>
