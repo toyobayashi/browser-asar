@@ -131,7 +131,7 @@ Filesystem.prototype.readFileSync = function readFileSync (p, toUtf8) {
     throw new Error('Cannot read unpacked file.');
   }
   var offset = 8 + this.headerSize + parseInt(info.offset);
-  var buf = slice(this.buffer, offset, offset + info.size);
+  var buf = new Uint8Array(slice(this.buffer, offset, offset + info.size));
   if (toUtf8) {
     return toString(buf);
   } else {
