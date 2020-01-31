@@ -2,7 +2,9 @@
 
 Handle [asar](https://github.com/electron/asar) file in browser.
 
-Demo: [https://toyobayashi.github.io/browser-asar/](https://toyobayashi.github.io/browser-asar/)
+AJAX demo: [https://toyobayashi.github.io/browser-asar/](https://toyobayashi.github.io/browser-asar/)
+
+File input demo: [https://toyobayashi.github.io/browser-asar/file.html](https://toyobayashi.github.io/browser-asar/file.html)
 
 Support IE 10+ (require `Uint8Array`)
 

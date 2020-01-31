@@ -1,19 +1,19 @@
 (function (window) {
-  var loading = document.getElementById('loading');
-  var content = document.getElementById('content');
-  content.style.display = 'none';
-
+  var input = document.getElementById('fileInput');
   var left = document.getElementById('left');
   var right = document.getElementById('right');
 
   var fs;
 
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status < 400) {
-      content.style.display = 'flex';
-      loading.innerHTML = xhr.responseURL;
-      var buf = new Uint8Array(xhr.response);
+  input.addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    var arr = file.name.split('.');
+    if (arr[arr.length - 1] !== 'asar') {
+      throw new Error('Not an asar file.');
+    }
+    var reader = new FileReader();
+    reader.onloadend = function (e) {
+      var buf = new Uint8Array(e.target.result);
       try {
         fs = new asar.Filesystem(buf);
       } catch (err) {
@@ -24,12 +24,9 @@
         left.removeChild(left.childNodes[0]);
       }
       renderList('/', 0, fs);
-    }
-  };
-  xhr.open('GET', './app.asar', true);
-  xhr.responseType = 'arraybuffer';
-  loading.innerHTML = 'Loading...';
-  xhr.send();
+    };
+    reader.readAsArrayBuffer(file);
+  });
 
   left.addEventListener('click', function (event) {
     var target = event.target;
