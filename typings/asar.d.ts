@@ -37,6 +37,7 @@ export declare class Filesystem {
 export declare namespace commonjs {
   export function run(fs: Filesystem): any;
   export function inject(moduleName: string, m: any): void;
+  export function requireModule(moduleName: string): any;
   export function extend(ext: string, compilerFactory: (fs: Filesystem) => (module: Module, filename: string) => void): void;
 }
 

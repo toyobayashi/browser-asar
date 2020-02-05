@@ -1,40 +1,9 @@
-import { validateString, validateFunction } from './constants.js';
+import { validateString } from './constants.js';
 import * as path from './path.js';
 import Filesystem from './filesystem.js';
-import { builtinModules, extensions, createModuleClass } from './module.js';
+import { createModuleClass, requireModule, inject, extend } from './module.js';
 
-/**
- * Inject builtin module that can be required in asar package.
- * @param {string} moduleName - module name
- * @param {any} m - function or any value
- */
-export function inject (moduleName, m) {
-  validateString(moduleName, 'moduleName');
-  if (typeof m === 'function') {
-    var module = { exports: {} };
-    m.call(module.exports, module.exports, function require (m) {
-      validateString(m, 'm');
-      if (m in builtinModules) {
-        return builtinModules[m];
-      }
-      throw new Error('Cannot find module \'' + m + '\'. ');
-    }, module);
-    builtinModules[moduleName] = module.exports;
-  } else {
-    builtinModules[moduleName] = m;
-  }
-}
-
-/**
- * Handle custom file format.
- * @param {string} ext - extension
- * @param {(fs: Filesystem) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
- */
-export function extend (ext, compilerFactory) {
-  validateString(ext, 'ext');
-  validateFunction(compilerFactory, 'compilerFactory');
-  extensions[ext] = compilerFactory;
-}
+export { requireModule, inject, extend };
 
 /**
  * Run an asar package like a Node.js project.

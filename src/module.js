@@ -1,10 +1,59 @@
-import { CHAR_FORWARD_SLASH, nmChars } from './constants.js';
+import { CHAR_FORWARD_SLASH, nmChars, validateString, validateFunction } from './constants.js';
 import * as path from './path.js';
 
 var nmLen = nmChars.length;
 
 export var builtinModules = Object.create(null);
 export var extensions = Object.create(null);
+
+Object.defineProperty(builtinModules, 'path', {
+  configurable: false,
+  writable: false,
+  enumerable: true,
+  value: path
+});
+
+/**
+ * Require builtin module.
+ * @param {string} moduleName - module name
+ * @returns {any}
+ */
+export function requireModule (moduleName) {
+  validateString(moduleName, 'moduleName');
+  if (moduleName in builtinModules) {
+    return builtinModules[moduleName];
+  }
+  throw new Error('Cannot find module \'' + moduleName + '\'. ');
+}
+
+/**
+ * Inject builtin module that can be required in asar package.
+ * @param {string} moduleName - module name
+ * @param {any} m - function or any value
+ */
+export function inject (moduleName, m) {
+  validateString(moduleName, 'moduleName');
+  if (typeof m === 'function') {
+    var module = { exports: {} };
+    m.call(module.exports, module.exports, function require (moduleName) {
+      return requireModule(moduleName);
+    }, module);
+    builtinModules[moduleName] = module.exports;
+  } else {
+    builtinModules[moduleName] = m;
+  }
+}
+
+/**
+ * Handle custom file format.
+ * @param {string} ext - extension
+ * @param {(fs: Filesystem) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
+ */
+export function extend (ext, compilerFactory) {
+  validateString(ext, 'ext');
+  validateFunction(compilerFactory, 'compilerFactory');
+  extensions[ext] = compilerFactory;
+}
 
 function stripBOM (content) {
   if (content.charCodeAt(0) === 0xFEFF) {
@@ -321,7 +370,6 @@ export function createModuleClass (fs, makeRequireFunction) {
   function getBuiltinModule (request) {
     switch (request) {
       case 'fs': return fs;
-      case 'path': return path;
       case 'module': return Module;
       default: {
         if (request in builtinModules) {

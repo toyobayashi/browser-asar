@@ -996,6 +996,55 @@
   var builtinModules = Object.create(null);
   var extensions = Object.create(null);
 
+  Object.defineProperty(builtinModules, 'path', {
+    configurable: false,
+    writable: false,
+    enumerable: true,
+    value: path
+  });
+
+  /**
+   * Require builtin module.
+   * @param {string} moduleName - module name
+   * @returns {any}
+   */
+  function requireModule (moduleName) {
+    validateString(moduleName, 'moduleName');
+    if (moduleName in builtinModules) {
+      return builtinModules[moduleName];
+    }
+    throw new Error('Cannot find module \'' + moduleName + '\'. ');
+  }
+
+  /**
+   * Inject builtin module that can be required in asar package.
+   * @param {string} moduleName - module name
+   * @param {any} m - function or any value
+   */
+  function inject (moduleName, m) {
+    validateString(moduleName, 'moduleName');
+    if (typeof m === 'function') {
+      var module = { exports: {} };
+      m.call(module.exports, module.exports, function require (moduleName) {
+        return requireModule(moduleName);
+      }, module);
+      builtinModules[moduleName] = module.exports;
+    } else {
+      builtinModules[moduleName] = m;
+    }
+  }
+
+  /**
+   * Handle custom file format.
+   * @param {string} ext - extension
+   * @param {(fs: Filesystem) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
+   */
+  function extend (ext, compilerFactory) {
+    validateString(ext, 'ext');
+    validateFunction(compilerFactory, 'compilerFactory');
+    extensions[ext] = compilerFactory;
+  }
+
   function stripBOM (content) {
     if (content.charCodeAt(0) === 0xFEFF) {
       content = content.slice(1);
@@ -1311,7 +1360,6 @@
     function getBuiltinModule (request) {
       switch (request) {
         case 'fs': return fs;
-        case 'path': return path;
         case 'module': return Module;
         default: {
           if (request in builtinModules) {
@@ -1323,39 +1371,6 @@
     }
 
     return Module;
-  }
-
-  /**
-   * Inject builtin module that can be required in asar package.
-   * @param {string} moduleName - module name
-   * @param {any} m - function or any value
-   */
-  function inject (moduleName, m) {
-    validateString(moduleName, 'moduleName');
-    if (typeof m === 'function') {
-      var module = { exports: {} };
-      m.call(module.exports, module.exports, function require (m) {
-        validateString(m, 'm');
-        if (m in builtinModules) {
-          return builtinModules[m];
-        }
-        throw new Error('Cannot find module \'' + m + '\'. ');
-      }, module);
-      builtinModules[moduleName] = module.exports;
-    } else {
-      builtinModules[moduleName] = m;
-    }
-  }
-
-  /**
-   * Handle custom file format.
-   * @param {string} ext - extension
-   * @param {(fs: Filesystem) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
-   */
-  function extend (ext, compilerFactory) {
-    validateString(ext, 'ext');
-    validateFunction(compilerFactory, 'compilerFactory');
-    extensions[ext] = compilerFactory;
   }
 
   /**
@@ -1414,6 +1429,7 @@
 
   var commonjs = /*#__PURE__*/Object.freeze({
     __proto__: null,
+    requireModule: requireModule,
     inject: inject,
     extend: extend,
     run: run
