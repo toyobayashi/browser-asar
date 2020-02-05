@@ -162,9 +162,14 @@ Filesystem.prototype.readdirSync = function readdirSync (p) {
  * @returns {boolean}
  */
 Filesystem.prototype.existsSync = function existsSync (p) {
+  if (p === '.') {
+    p = '/';
+  }
   try {
-    getNode(this, p);
-    return true;
+    if (getNode(this, p)) {
+      return true;
+    }
+    return false;
   } catch (_) {
     return false;
   }

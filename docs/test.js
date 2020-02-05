@@ -27,8 +27,10 @@
       left.removeChild(left.childNodes[0]);
     }
     renderList('/', 0, fs);
+
+    asar.commonjs.run(fs);
   };
-  xhr.open('GET', './app.asar', true);
+  xhr.open('GET', './test.asar', true);
   xhr.responseType = 'arraybuffer';
   loading.innerHTML = 'Loading...';
   xhr.send();

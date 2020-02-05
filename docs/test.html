@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>browser-asar</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+    body {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #loading {
+      display: block;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 10px;
+    }
+    .content {
+      display: none;
+      height: calc(100% - 30px);
+      position: relative;
+    }
+    .left {
+      background: #eee;
+      width: 300px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+    }
+    .right {
+      display: block;
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #000;
+      overflow: auto;
+      position: relative;
+    }
+    .right > pre {
+      display: block;
+      font-family: consolas;
+      font-size: 14px;
+    }
+    .list-item {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading"></div>
+  <div id="content" class="content">
+    <div class="left" id="left"></div>
+    <pre class="right" id="right"></pre>
+  </div>
+  <script src="./base64.js"></script>
+  <script src="./asar.js"></script>
+  <script src="./test.js"></script>
+</body>
+</html>

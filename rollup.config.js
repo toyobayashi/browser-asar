@@ -5,5 +5,8 @@ module.exports = {
     format: 'umd',
     name: 'asar',
     exports: 'named'
-  }
+  },
+  plugins: [
+    require('@rollup/plugin-json')()
+  ]
 }
