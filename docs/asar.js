@@ -1375,13 +1375,16 @@
 
   /**
    * Run an asar package like a Node.js project.
-   * @param {Filesystem} fs - Filesystem object
+   * @param {Filesystem} fs - Filesystem object\
+   * @param {string=} entry - entry module path
    * @returns {any} module.exports of entry module
    */
-  function run (fs) {
+  function run (fs, entry) {
     if (!(fs instanceof Filesystem)) {
       throw new TypeError('The argument \'fs\' must be a Filesystem object.');
     }
+    entry = entry !== undefined ? entry : '/';
+    validateString(entry);
     var mainModule;
     var makeRequireFunction = function makeRequireFunction (mod) {
       var Module = mod.constructor;
@@ -1410,15 +1413,15 @@
     };
 
     var Module = createModuleClass(fs, makeRequireFunction);
-    var entry = Module._resolveFilename('/', null, true);
-    var module = Module._cache[entry] = new Module(entry, null);
-    module.filename = entry;
-    module.paths = Module._nodeModulePaths(dirname(entry));
+    var entryPath = Module._resolveFilename(entry, null, true);
+    var module = Module._cache[entryPath] = new Module(entryPath, null);
+    module.filename = entryPath;
+    module.paths = Module._nodeModulePaths(dirname(entryPath));
     mainModule = module;
     try {
-      Module._extensions[extname(entry)](module, entry);
+      Module._extensions[extname(entryPath)](module, entryPath);
     } catch (err) {
-      delete Module._cache[entry];
+      delete Module._cache[entryPath];
       mainModule = undefined;
       throw err;
     }
