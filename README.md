@@ -60,7 +60,7 @@ Available builtin modules in asar package:
 
 ``` ts
 declare class Stat {
-  constructor(info: any): Stat;
+  constructor(info: any);
   readonly size: number;
   isUnpacked(): boolean;
   isDirectory(): boolean;
@@ -69,6 +69,7 @@ declare class Stat {
 }
 
 declare class Module {
+  constructor(id: string, parent: Module | null);
   id: string;
   filename: string;
   path: string;
@@ -77,12 +78,11 @@ declare class Module {
   exports: any;
   children: Module[];
   paths: string[];
-  constructor(id: string, parent: Module | null): Module;
   require(mod: string): any;
 }
 
 export declare class Filesystem {
-  constructor(buffer: Uint8Array): Filesystem;
+  constructor(buffer: Uint8Array);
   readonly buffer: Uint8Array;
   readonly header: { files: { [item: string]: any } };
   readonly headerSize: number;
@@ -96,7 +96,7 @@ export declare class Filesystem {
 }
 
 export declare class Modulesystem {
-  constructor(fs: Filesystem | Uint8Array): Modulesystem;
+  constructor(fs: Filesystem | Uint8Array);
   static run(fs: Filesystem, entry?: string): any;
   static inject(moduleName: string, m: any): void;
   static require(moduleName: string): any;
