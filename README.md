@@ -1,6 +1,6 @@
 # browser-asar
 
-Handle [asar](https://github.com/electron/asar) file in browser.
+Handle [asar](https://github.com/electron/asar) file in browser. (Readonly)
 
 AJAX demo: [https://toyobayashi.github.io/browser-asar/](https://toyobayashi.github.io/browser-asar/)
 
@@ -9,6 +9,50 @@ File input demo: [https://toyobayashi.github.io/browser-asar/file.html](https://
 Running demo: [https://toyobayashi.github.io/browser-asar/test.html](https://toyobayashi.github.io/browser-asar/test.html)
 
 Support IE 10+ (require `Uint8Array`)
+
+## Usage
+
+You can find examples in `docs/` and `test/`.
+
+``` html
+<!-- Get it from package.json "main" field -->
+<script src="asar.js"></script>
+```
+
+``` js
+var xhr = new XMLHttpRequest();
+xhr.onload = function () {
+  var buf = new Uint8Array(xhr.response);
+  try {
+    fs = new asar.Filesystem(buf);
+  } catch (err) {
+    throw new Error('Invalid asar file: ' + err.message);
+  }
+
+  // Then you can do something like Node.js `fs` module.
+  // Note the asar package is readonly.
+  // Available API list can be found below.
+
+  // fs.readFileSync(...)
+  // fs.existsSync(...)
+  // fs.statSync(...).isDirectory()
+  // ...
+
+  // Run as a Node.js project folder
+  asar.commonjs.run(fs);
+};
+xhr.open('GET', './test.asar', true);
+xhr.responseType = 'arraybuffer';
+xhr.send();
+```
+
+Available builtin modules in asar package:
+
+* `path` - posix part only
+
+* `fs`
+
+* `module`
 
 ## API
 
