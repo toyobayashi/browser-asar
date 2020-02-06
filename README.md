@@ -23,6 +23,7 @@ You can find examples in `docs/` and `test/`.
 var xhr = new XMLHttpRequest();
 xhr.onload = function () {
   var buf = new Uint8Array(xhr.response);
+  var fs;
   try {
     fs = new asar.Filesystem(buf);
   } catch (err) {
