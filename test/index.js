@@ -9,3 +9,4 @@ console.log(require('./package'));
 console.log(require('json'));
 console.log(module);
 console.log(require('path'));
+console.log(require('fs'));

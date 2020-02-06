@@ -40,7 +40,8 @@ xhr.onload = function () {
   // ...
 
   // Run as a Node.js project folder
-  asar.commonjs.run(fs);
+  var ms = new asar.Modulesystem(fs);
+  ms.run();
 };
 xhr.open('GET', './test.asar', true);
 xhr.responseType = 'arraybuffer';
@@ -94,11 +95,16 @@ export declare class Filesystem {
   lstatSync(p: string): Stat;
 }
 
-export declare namespace commonjs {
-  export function run(fs: Filesystem, entry?: string): any;
-  export function inject(moduleName: string, m: any): void;
-  export function requireModule(moduleName: string): any;
-  export function extend(ext: string, compilerFactory: (fs: Filesystem) => (module: Module, filename: string) => void): void;
+export declare class Modulesystem {
+  constructor(fs: Filesystem): Modulesystem;
+  static run(fs: Filesystem, entry?: string): any;
+  static inject(moduleName: string, m: any): void;
+  static require(moduleName: string): any;
+  static extend(ext: string, compilerFactory: (require: (moduleName: string) => any) => (module: Module, filename: string) => void): void;
+  run(entry?: string): any;
+  inject(moduleName: string, m: any): void;
+  require(moduleName: string): any;
+  extend(ext: string, compilerFactory: (this: Modulesystem, require: (this: Modulesystem, moduleName: string) => any) => (module: Module, filename: string) => void): void;
 }
 
 export as namespace asar;

@@ -1,6 +1,6 @@
 import Filesystem from './filesystem.js';
-import * as commonjs from './commonjs.js';
+import Modulesystem from './modulesystem.js';
 
-export { Filesystem, commonjs };
+export { Filesystem, Modulesystem };
 
 export { version } from '../package.json';

@@ -28,7 +28,8 @@
     }
     renderList('/', 0, fs);
 
-    asar.commonjs.run(fs);
+    var ms = new asar.Modulesystem(fs);
+    ms.run();
   };
   xhr.open('GET', './test.asar', true);
   xhr.responseType = 'arraybuffer';

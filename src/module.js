@@ -3,53 +3,38 @@ import * as path from './path.js';
 
 var nmLen = nmChars.length;
 
-export var builtinModules = Object.create(null);
+export var globalBuiltins = Object.create(null);
 export var extensions = Object.create(null);
 
-Object.defineProperty(builtinModules, 'path', {
+Object.defineProperty(globalBuiltins, 'path', {
   configurable: false,
   writable: false,
   enumerable: true,
   value: path
 });
 
-/**
- * Require builtin module.
- * @param {string} moduleName - module name
- * @returns {any}
- */
 export function requireModule (moduleName) {
   validateString(moduleName, 'moduleName');
-  if (moduleName in builtinModules) {
-    return builtinModules[moduleName];
+  if (moduleName in globalBuiltins) {
+    return globalBuiltins[moduleName];
   }
   throw new Error('Cannot find module \'' + moduleName + '\'. ');
 }
 
-/**
- * Inject builtin module that can be required in asar package.
- * @param {string} moduleName - module name
- * @param {any} m - function or any value
- */
-export function inject (moduleName, m) {
+export function injectModule (moduleName, m) {
   validateString(moduleName, 'moduleName');
   if (typeof m === 'function') {
     var module = { exports: {} };
     m.call(module.exports, module.exports, function require (moduleName) {
       return requireModule(moduleName);
     }, module);
-    builtinModules[moduleName] = module.exports;
+    globalBuiltins[moduleName] = module.exports;
   } else {
-    builtinModules[moduleName] = m;
+    globalBuiltins[moduleName] = m;
   }
 }
 
-/**
- * Handle custom file format.
- * @param {string} ext - extension
- * @param {(fs: Filesystem) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
- */
-export function extend (ext, compilerFactory) {
+export function extendModule (ext, compilerFactory) {
   validateString(ext, 'ext');
   validateFunction(compilerFactory, 'compilerFactory');
   extensions[ext] = compilerFactory;
@@ -103,7 +88,9 @@ export function createModuleClass (fs, makeRequireFunction) {
   for (var ext in extensions) {
     var internals = Object.keys(Module._extensions);
     if (internals.indexOf(ext) === -1) {
-      Module._extensions[ext] = extensions[ext](fs);
+      Module._extensions[ext] = extensions[ext](function require (moduleName) {
+        return getBuiltinModule(moduleName);
+      });
     }
   }
 
@@ -371,12 +358,7 @@ export function createModuleClass (fs, makeRequireFunction) {
     switch (request) {
       case 'fs': return fs;
       case 'module': return Module;
-      default: {
-        if (request in builtinModules) {
-          return builtinModules[request];
-        }
-        throw new Error();
-      }
+      default: return requireModule(request);
     }
   }
 

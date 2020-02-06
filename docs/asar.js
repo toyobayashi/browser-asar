@@ -993,53 +993,38 @@
 
   var nmLen = nmChars.length;
 
-  var builtinModules = Object.create(null);
+  var globalBuiltins = Object.create(null);
   var extensions = Object.create(null);
 
-  Object.defineProperty(builtinModules, 'path', {
+  Object.defineProperty(globalBuiltins, 'path', {
     configurable: false,
     writable: false,
     enumerable: true,
     value: path
   });
 
-  /**
-   * Require builtin module.
-   * @param {string} moduleName - module name
-   * @returns {any}
-   */
   function requireModule (moduleName) {
     validateString(moduleName, 'moduleName');
-    if (moduleName in builtinModules) {
-      return builtinModules[moduleName];
+    if (moduleName in globalBuiltins) {
+      return globalBuiltins[moduleName];
     }
     throw new Error('Cannot find module \'' + moduleName + '\'. ');
   }
 
-  /**
-   * Inject builtin module that can be required in asar package.
-   * @param {string} moduleName - module name
-   * @param {any} m - function or any value
-   */
-  function inject (moduleName, m) {
+  function injectModule (moduleName, m) {
     validateString(moduleName, 'moduleName');
     if (typeof m === 'function') {
       var module = { exports: {} };
       m.call(module.exports, module.exports, function require (moduleName) {
         return requireModule(moduleName);
       }, module);
-      builtinModules[moduleName] = module.exports;
+      globalBuiltins[moduleName] = module.exports;
     } else {
-      builtinModules[moduleName] = m;
+      globalBuiltins[moduleName] = m;
     }
   }
 
-  /**
-   * Handle custom file format.
-   * @param {string} ext - extension
-   * @param {(fs: Filesystem) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
-   */
-  function extend (ext, compilerFactory) {
+  function extendModule (ext, compilerFactory) {
     validateString(ext, 'ext');
     validateFunction(compilerFactory, 'compilerFactory');
     extensions[ext] = compilerFactory;
@@ -1093,7 +1078,9 @@
     for (var ext in extensions) {
       var internals = Object.keys(Module._extensions);
       if (internals.indexOf(ext) === -1) {
-        Module._extensions[ext] = extensions[ext](fs);
+        Module._extensions[ext] = extensions[ext](function require (moduleName) {
+          return getBuiltinModule(moduleName);
+        });
       }
     }
 
@@ -1361,87 +1348,171 @@
       switch (request) {
         case 'fs': return fs;
         case 'module': return Module;
-        default: {
-          if (request in builtinModules) {
-            return builtinModules[request];
-          }
-          throw new Error();
-        }
+        default: return requireModule(request);
       }
     }
 
     return Module;
   }
 
-  /**
-   * Run an asar package like a Node.js project.
-   * @param {Filesystem} fs - Filesystem object\
-   * @param {string=} entry - entry module path
-   * @returns {any} module.exports of entry module
-   */
-  function run (fs, entry) {
+  function defineProperty (o, key, value) {
+    return Object.defineProperty(o, key, {
+      configurable: false,
+      writable: false,
+      enumerable: true,
+      value: value
+    });
+  }
+
+  function Modulesystem (fs) {
     if (!(fs instanceof Filesystem)) {
       throw new TypeError('The argument \'fs\' must be a Filesystem object.');
     }
+    this.mainModule = null;
+    this.builtins = Object.create(null);
+    defineProperty(this.builtins, 'fs', fs);
+    var makeRequireFunction = (function (ms) {
+      return function makeRequireFunction (mod) {
+        var Module = mod.constructor;
+        var require = function require (path) {
+          return mod.require(path);
+        };
+
+        function resolve (request) {
+          validateString(request, 'request');
+          return Module._resolveFilename(request, mod, false);
+        }
+
+        require.resolve = resolve;
+
+        function paths (request) {
+          validateString(request, 'request');
+          return Module._resolveLookupPaths(request, mod);
+        }
+
+        resolve.paths = paths;
+        require.main = ms.mainModule;
+        require.extensions = Module._extensions;
+        require.cache = Module._cache;
+
+        return require;
+      };
+    })(this);
+    defineProperty(this.builtins, 'module', createModuleClass(fs, makeRequireFunction));
+  }
+
+  /**
+   * Run an asar package like a Node.js project.
+   * @param {string=} entry - entry module path
+   * @returns {any} module.exports of entry module
+   */
+  Modulesystem.prototype.run = function run (entry) {
     entry = entry !== undefined ? entry : '/';
     validateString(entry);
-    var mainModule;
-    var makeRequireFunction = function makeRequireFunction (mod) {
-      var Module = mod.constructor;
-      var require = function require (path) {
-        return mod.require(path);
-      };
 
-      function resolve (request) {
-        validateString(request, 'request');
-        return Module._resolveFilename(request, mod, false);
-      }
-
-      require.resolve = resolve;
-
-      function paths (request) {
-        validateString(request, 'request');
-        return Module._resolveLookupPaths(request, mod);
-      }
-
-      resolve.paths = paths;
-      require.main = mainModule;
-      require.extensions = Module._extensions;
-      require.cache = Module._cache;
-
-      return require;
-    };
-
-    var Module = createModuleClass(fs, makeRequireFunction);
+    var Module = this.builtins.module;
     var entryPath = Module._resolveFilename(entry, null, true);
     var module = Module._cache[entryPath] = new Module(entryPath, null);
     module.filename = entryPath;
     module.paths = Module._nodeModulePaths(dirname(entryPath));
-    mainModule = module;
+    this.mainModule = module;
     try {
       Module._extensions[extname(entryPath)](module, entryPath);
     } catch (err) {
       delete Module._cache[entryPath];
-      mainModule = undefined;
+      this.mainModule = null;
       throw err;
     }
     module.loaded = true;
 
     return module.exports;
-  }
+  };
 
-  var commonjs = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    requireModule: requireModule,
-    inject: inject,
-    extend: extend,
-    run: run
-  });
+  /**
+   * Require builtin module.
+   * @param {string} moduleName - module name
+   * @returns {any}
+   */
+  Modulesystem.prototype.require = function require (moduleName) {
+    validateString(moduleName, 'moduleName');
+    if (moduleName in this.builtins) {
+      return this.builtins[moduleName];
+    }
+    if (moduleName in globalBuiltins) {
+      return globalBuiltins[moduleName];
+    }
+    throw new Error('Cannot find module \'' + moduleName + '\'. ');
+  };
+
+  /**
+   * Inject builtin module that can be required in asar package.
+   * @param {string} moduleName - module name
+   * @param {any} m - function or any value
+   */
+  Modulesystem.prototype.inject = function inject (moduleName, m) {
+    validateString(moduleName, 'moduleName');
+    if (typeof m === 'function') {
+      var module = { exports: {} };
+      m.call(module.exports, module.exports, this.require.bind(this), module);
+      this.builtins[moduleName] = module.exports;
+    } else {
+      this.builtins[moduleName] = m;
+    }
+  };
+
+  /**
+   * Handle custom file format.
+   * @param {string} ext - extension
+   * @param {(this: Modulesystem, require: (this: Modulesystem, moduleName: string) => any) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
+   */
+  Modulesystem.prototype.extend = function extend (ext, compilerFactory) {
+    validateString(ext, 'ext');
+    validateFunction(compilerFactory, 'compilerFactory');
+    this.builtins.module._extensions[ext] = compilerFactory.call(this, this.require.bind(this));
+  };
+
+  /**
+   * Run an asar package like a Node.js project.
+   * @param {Filesystem} fs - Filesystem object
+   * @param {string=} entry - entry module path
+   * @returns {any} module.exports of entry module
+   */
+  Modulesystem.run = function run (fs, entry) {
+    var ms = new Modulesystem(fs);
+    return ms.run(entry);
+  };
+
+  /**
+   * Require global builtin module.
+   * @param {string} moduleName - module name
+   * @returns {any}
+   */
+  Modulesystem.require = function require (moduleName) {
+    return requireModule(moduleName);
+  };
+
+  /**
+   * Inject global builtin module that can be required in asar package.
+   * @param {string} moduleName - module name
+   * @param {any} m - function or any value
+   */
+  Modulesystem.inject = function inject (moduleName, m) {
+    injectModule(moduleName, m);
+  };
+
+  /**
+   * Handle custom file format.
+   * @param {string} ext - extension
+   * @param {(require: (moduleName: string) => any) => (module: InstanceType<ReturnType<createModuleClass>>, filename: string) => void} compilerFactory - how to load file
+   */
+  Modulesystem.extend = function extend (ext, compilerFactory) {
+    extendModule(ext, compilerFactory);
+  };
 
   var version = "1.0.0";
 
   exports.Filesystem = Filesystem;
-  exports.commonjs = commonjs;
+  exports.Modulesystem = Modulesystem;
   exports.version = version;
 
   Object.defineProperty(exports, '__esModule', { value: true });
