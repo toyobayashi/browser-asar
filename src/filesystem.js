@@ -12,6 +12,10 @@ function Filesystem (buffer) {
     return new Filesystem(buffer);
   }
 
+  if (!(buffer instanceof Uint8Array)) {
+    throw new TypeError('The "buffer" argument must be an instance of Uint8Array.');
+  }
+
   var size;
   var headerBuf;
   var sizeBuf = slice(buffer, 0, 8);

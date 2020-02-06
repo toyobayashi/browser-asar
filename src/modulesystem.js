@@ -12,9 +12,21 @@ function defineProperty (o, key, value) {
   });
 }
 
-function Modulesystem (fs) {
-  if (!(fs instanceof Filesystem)) {
-    throw new TypeError('The argument \'fs\' must be a Filesystem object.');
+/**
+ * @constructor
+ * @param {Filesystem | Uint8Array} bufferOrfs - ASAR buffer or Filesystem object
+ */
+function Modulesystem (bufferOrfs) {
+  if (!(this instanceof Modulesystem)) {
+    return new Modulesystem(bufferOrfs);
+  }
+  var fs;
+  if (bufferOrfs instanceof Filesystem) {
+    fs = bufferOrfs;
+  } else if (bufferOrfs instanceof Uint8Array) {
+    fs = new Filesystem(bufferOrfs);
+  } else {
+    throw new TypeError('The "bufferOrfs" argument must be an instance of Filesystem or Uint8Array.');
   }
   this.mainModule = null;
   this.builtins = Object.create(null);

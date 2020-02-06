@@ -96,7 +96,7 @@ export declare class Filesystem {
 }
 
 export declare class Modulesystem {
-  constructor(fs: Filesystem): Modulesystem;
+  constructor(fs: Filesystem | Uint8Array): Modulesystem;
   static run(fs: Filesystem, entry?: string): any;
   static inject(moduleName: string, m: any): void;
   static require(moduleName: string): any;
