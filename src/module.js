@@ -1,4 +1,5 @@
 import { CHAR_FORWARD_SLASH, nmChars, validateString, validateFunction } from './constants.js';
+import { slice } from './buffer.js';
 import * as path from './path.js';
 
 var nmLen = nmChars.length;
@@ -42,7 +43,7 @@ export function extendModule (ext, compilerFactory) {
 
 function stripBOM (content) {
   if (content.charCodeAt(0) === 0xFEFF) {
-    content = content.slice(1);
+    content = slice(content, 1);
   }
   return content;
 }
